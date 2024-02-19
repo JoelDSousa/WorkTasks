@@ -4,38 +4,51 @@ import PIL
 from PIL import Image
 from os import mkdir
 
-# Criar lista de elementos presentes na pasta
-filenames = listdir("./Fotos")
+def getJPEG():
+  # Criar lista de elementos presentes na pasta
+  filenames = listdir("./Fotos")
 
-# Ordenar os elementos alfabeticamente
-filenames.sort()
+  # Ordenar os elementos alfabeticamente
+  filenames.sort()
 
-# Criar lista só de elementos .jpg
-jpgFiles = []
-for file in filenames:
-    filetype = file.split('.')[-1]
-    if filetype == 'jpg':
-        jpgFiles.append(file)
+  # Criar lista só de elementos .jpg
+  jpgFiles = []
+  for file in filenames:
+      filetype = file.split('.')[-1]
+      if filetype == 'jpg':
+          jpgFiles.append(file)
+  return jpgFiles
 
-# Remover para poupar memória do PC
-del filenames
-
-# Redimensiona e coloca as fotos no sítio correto
-for file in jpgFiles:
-    origem = './Fotos/'+file
+def resizeFiles(jpgFiles):
+  resizedImages = []
+  for file in jpgFiles:
+    origin = './Fotos/'+str(file)
     sepFile = file.split('_')
     date = sepFile[0][2:8]
-    image = Image.open(origem)
+    image = Image.open(origin)
     resizedImage = image.resize((1280,720))
-    if file != jpgFiles[-1]:
-        
-        imageName = './Fotos/'+ date + '/'+file  
+    resizedImages.append(resizedImage)
+  return resizedImages, date
+
+def imageAllocator(resizedImages, date):
+  counter = 0
+  for image in resizedImages:
+    counter += 1
+    if image !=resizedImages[-1]:
+      imageDir = './Fotos/'+ str(date) + '/'+ str(counter)
     else:
-        if not os.path.exists('./FSERV'):
-            mkdir('./FSERV')
-        fullCWD = os.getcwd()#Current Working Directory Full path
-        cWD = os.path.basename(fullCWD)
-        splitCWD = cWD.split('-')
-        cliente = splitCWD[0].strip()
-        imageName = './FSERV/Folha de Serviço.'+ cliente + '.'+ date + '.jpg'
-    resizedImage.save(imageName)
+      if not os.path.exists('./FSERV'):
+        mkdir('./FSERV')
+      fullCWD = os.getcwd()#Current Working Directory Full path
+      cWD = os.path.basename(fullCWD)
+      splitCWD = cWD.split('-')
+      cliente = splitCWD[0].strip()
+      imageDir = './FSERV/Folha de Serviço.'+ cliente + '.'+ date + '.jpg'
+    image.save(imageDir)
+
+def main():
+    jpgFiles = getJPEG()
+    resizedImages, date = resizeFiles(jpgFiles)
+    imageAllocator(resizedImages, date)
+
+main()
