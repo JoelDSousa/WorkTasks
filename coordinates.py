@@ -39,7 +39,7 @@ def get_days():
 # will search for the excel file that has the current Year schedule
 def open_Excel(currentYear):
     currentYear=str(currentYear)
-    regex = r"(.*)"+currentYear+" - PRO.APL.* - AGENDA"
+    regex = r"(.*)"+currentYear+" - PRO\.APL\.\d{,3} - AGENDA"
     test_str = "JOEL 2024 - PRO.APL.010 - AGENDA"
     matches= re.search(regex,test_str)
     if matches.group(1).strip():
