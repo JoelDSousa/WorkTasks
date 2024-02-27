@@ -33,7 +33,7 @@ def get_days():
     month_start = int(today.strftime("%m"))
     year = int(today.strftime("%Y"))
     day_end = int(today.strftime("%d"))+7
-    
+    month_end = month_start
     bigMonths = [1,3,5,7,8,10,12]
     smallMonths = [4,6,9,11]
 
@@ -106,23 +106,56 @@ def open_Excel(matchedExcel):
     return wb
 
 def sheetDF(wb, dateDict):
+    
     if len(str(dateDict['start_month']))<2:
         dateDict['start_month'] = '0'+str(dateDict['start_month'])
     else:
         dateDict['start_month'] = str(dateDict['start_month'])
+    
+    
     sheetName = str(dateDict['year'])[-2:] + dateDict['start_month']
     ws = wb[sheetName]
-    xlDF = pd.DataFrame(ws.values) 
+    df = pd.DataFrame(ws.values) 
+    indices = [1,2,3,4,5,6,10]
+    
+    relevantInfo = df.loc[:,indices]
+    
+    
+    return relevantInfo
 
-    return xlDF
+def searchDate(info,dateDict):
+    if len(str(dateDict['start_month']))<2:
+        dateDict['start_month'] = '0'+str(dateDict['start_month'])
+    else:
+        dateDict['start_month'] = str(dateDict['start_month'])
+
+    if len(str(dateDict['start_day']))<2:
+        dateDict['start_day'] = '0'+str(dateDict['start_day'])
+    else:
+        dateDict['start_day'] = str(dateDict['start_day'])
+
+
+    startDate = str(dateDict['year'])+'-'+str(dateDict['start_month'])+'-'+str(dateDict['start_day'])
+
+    indexCell = 0
+    for row in info.loc[:,1]:
+        if startDate in str(row):
+            return indexCell
+        else:
+            indexCell+=1
+        
+
+    return indexCell
 
 def main():
     dateDict = get_days()
-    print(dateDict)
     fileMatched, userName = matched_Excel(dateDict['year'])
     wb = open_Excel(fileMatched)
-    xlDF = sheetDF(wb,dateDict)
-    print(xlDF)
+    info = sheetDF(wb,dateDict)
+    indexCell = searchDate(info,dateDict)
+
+    print(info.loc[indexCell:,1])
+    
 
 
 main()
