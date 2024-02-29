@@ -105,6 +105,22 @@ def open_Excel(matchedExcel):
     wb = openpyxl.load_workbook(filename=decrypted_workbook, data_only=True)
     return wb
 
+
+# Made to reuse code
+def sheetinfo(wb,sheetName):
+    ws = wb[sheetName]
+    df = pd.DataFrame(ws.values) 
+    indices = [1,2,3,4,5,6,10]
+    
+    info = df.iloc[:,indices]
+
+    info.columns = ['Date', 'Start', 'Finish', 'Client', 'Serv','Equips','Obs']
+    
+    
+    return info
+
+
+
 def sheetDF(wb, dateDict):
     
     if len(str(dateDict['start_month']))<2:
@@ -112,50 +128,115 @@ def sheetDF(wb, dateDict):
     else:
         dateDict['start_month'] = str(dateDict['start_month'])
     
-    
-    sheetName = str(dateDict['year'])[-2:] + dateDict['start_month']
-    ws = wb[sheetName]
-    df = pd.DataFrame(ws.values) 
-    indices = [1,2,3,4,5,6,10]
-    
-    relevantInfo = df.loc[:,indices]
-    
-    
-    return relevantInfo
-
-def searchDate(info,dateDict):
-    if len(str(dateDict['start_month']))<2:
-        dateDict['start_month'] = '0'+str(dateDict['start_month'])
+    if len(str(dateDict['end_month']))<2:
+        dateDict['end_month'] = '0'+str(dateDict['end_month'])
     else:
-        dateDict['start_month'] = str(dateDict['start_month'])
+        dateDict['end_month'] = str(dateDict['end_month'])
 
-    if len(str(dateDict['start_day']))<2:
-        dateDict['start_day'] = '0'+str(dateDict['start_day'])
+    sheetNameStart = str(dateDict['year'])[-2:] + dateDict['start_month']
+
+    sheetNameEnd = str(dateDict['year'])[-2:] + dateDict['end_month']
+    
+    infoStart = sheetinfo(wb,sheetNameStart)
+    
+    infoEnd = sheetinfo(wb,sheetNameEnd)
+
+    return infoStart, infoEnd
+
+#Decided to create a function purely to get the date string so that code is reused and lines aren't repeated
+def getDateFormat(startYear,startDay, startMonth):
+    #Adjusting the string to get the correct expression, according to how the dataframe expresses date: "YYYY-MM-DD"
+    if len(str(startMonth))<2:
+        startMonth = '0'+str(startMonth)
     else:
-        dateDict['start_day'] = str(dateDict['start_day'])
+        startMonth = str(startMonth)
+    #Same adjustment for day
+    if len(str(startDay))<2:
+        startDay = '0'+str(startDay)
+    else:
+        startDay = str(startDay)
 
+    #Get the full date in the same format as the excel cells
+    
+    startDate = str(startYear)+'-'+str(startMonth)+'-'+str(startDay)  
 
-    startDate = str(dateDict['year'])+'-'+str(dateDict['start_month'])+'-'+str(dateDict['start_day'])
+    return startDate
 
-    indexCell = 0
-    for row in info.loc[:,1]:
+#This function should return the indexes for he 1st cell that matches a given date
+def searchDate(infoStart, infoEnd,dateDict):
+  
+    startDate = getDateFormat(dateDict['year'],dateDict['start_day'],dateDict['start_month'])
+
+    indexStart = 0
+
+    for row in infoStart.iloc[:,0]:
         if startDate in str(row):
-            return indexCell
+            break
         else:
-            indexCell+=1
+            indexStart+=1
+    
+    indexEnd = 0
+    
+    endDate = getDateFormat(dateDict['year'],dateDict['end_day'],dateDict['end_month'])
+    for row in infoEnd.iloc[:,0]:
+        if endDate in str(row):
+            break
+        else:
+            indexEnd+=1
+    return indexStart , indexEnd
+
+
+#This function will filter through the dataframe information to only keep the relevant rows
+def filterInfo(indexStart, indexEnd, infoStart, infoEnd):
+
+    #Merging both dataframes to include all the information in one dataframe
+    if infoStart.equals(infoEnd):
+        mergedInfo = infoStart.iloc[indexStart:indexEnd,:]
+    else:
+        startInterval = infoStart.iloc[indexStart:,:]
+        endInterval = infoEnd.iloc[2:indexEnd,:]
+        mergedInfo = pd.concat([startInterval,endInterval])
+    
+    #resetting the rows index
+    mergedInfo = mergedInfo.reset_index()
+    # Defining expressions that don't need to be included:
+    expressions = ["https",
+                   "None",
+                   "deslocação",
+                   "CLIENTE",
+                   "EQUIPs",
+                   "OBSERVAÇÕES TÉCNICO"]
+    #Filtering the rows that include pointless information
+    mergedInfo = mergedInfo.drop('index',axis=1)
+    index_list = []
+    for row_index in range(len(mergedInfo)):
+        for expression in expressions:
+            if expression in str(mergedInfo.iloc[row_index,3]):
+                index_list.append(row_index)
         
 
-    return indexCell
+    finalInfo = mergedInfo.drop(index_list)
+
+    return finalInfo
+
+# This function will write the python file with the required information.
+# This will detect when the lines have unwarrented information and won'te write them
+
+def writeTXT(df):
+
+    with open("./coordinates.txt",'w', encoding="utf-8") as f: #encoding is specified to include special characters in the txt file
+        df_string = df.to_string()
+        f.write(df_string)
+
+    return 0 #done to not get error message because function is yet to be correctly scripted
 
 def main():
     dateDict = get_days()
     fileMatched, userName = matched_Excel(dateDict['year'])
     wb = open_Excel(fileMatched)
-    info = sheetDF(wb,dateDict)
-    indexCell = searchDate(info,dateDict)
-
-    print(info.loc[indexCell:,1])
+    infoStart, infoEnd = sheetDF(wb,dateDict)
+    indexStart, indexEnd = searchDate(infoStart, infoEnd,dateDict)
+    df = filterInfo(indexStart,indexEnd,infoStart,infoEnd)
+    writeTXT(df)
     
-
-
 main()
