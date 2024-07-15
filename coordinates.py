@@ -183,23 +183,36 @@ def filterInfo(indexStart, indexEnd, infoStart, infoEnd):
 def writeICS(df):
     
     cal = Calendar()
+
+    #Filtering the name field to get location info:
+
     for index, row in df.iterrows():
         event = Event()
-        event.name = f"{row['Client']} - {row['Serv']}"
+        
+        list_lines = str(row['Client']).split("\n")
+        event.name = list_lines[0]
+
+
+        if len(list_lines)>1:
+            if len(list_lines[3])>5:
+                event.location = list_lines[3]
+            else:
+                event.location = list_lines[2]
         
         if row['Start'] == None or pd.isna(row['Start']):
             event.begin = datetime(row['Date'].year, row['Date'].month,row['Date'].day)
             event.end = datetime(row['Date'].year, row['Date'].month,row['Date'].day)
             
         else:
-            print(type(row['Start']))
+            
             event.begin = datetime(int(row['Date'].year),int(row['Date'].month), int(row['Date'].day), int(row['Start'].hour), int(row['Start'].minute))
             
             event.end = datetime(int(row['Date'].year), row['Date'].month, row['Date'].day, row['Finish'].hour, row['Finish'].minute)
         
         
-        event.description = f"Equipments: {row['Equips']}\nObservations: {row['Obs']}"
+        event.description = f"Equipments: {row['Equips']}\nObservations: {row['Obs']}\nService: {row['Serv']}"
         cal.events.add(event)
+        
     with open("Week_Schedule.ics", 'w', encoding="utf-8") as f:  # Encoding is specified to include special characters in the txt file
         
         f.writelines(cal)
@@ -212,8 +225,10 @@ def main():
     infoStart, infoEnd = sheetDF(wb, dateDict)
     indexStart, indexEnd = searchDate(infoStart, infoEnd, dateDict)
     df = filterInfo(indexStart, indexEnd, infoStart, infoEnd)
+    #print(df)
     cal = writeICS(df)
-    print(cal)
+    #print(cal.serialize())
+   
 
 if __name__ == "__main__":
     main()
