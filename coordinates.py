@@ -13,9 +13,12 @@ import subprocess
 import sys
 import os
 from datetime import date, datetime, timedelta
+
 import re
 import io
 from os import listdir
+import tkinter as tk
+from tkinter import messagebox
 # Install required packages if not already installed
 required_packages = [
     'pandas',
@@ -180,11 +183,24 @@ def filterInfo(indexStart, indexEnd, infoStart, infoEnd):
     
     return finalInfo
 
-def writeICS(df):
+
+
+
+def dst_check(userName):
+    root = tk.Tk()
+    root.withdraw()
+    response = messagebox.askyesno(f"Agenda {userName}", "Horário de Verão?")
+    return response
+
+def writeICS(df, userName):
     
     cal = Calendar()
+     
 
-    #Filtering the name field to get location info:
+    # Checking if DST is in effect:
+    dst_in_effect = dst_check(userName=userName)
+
+    
 
     for index, row in df.iterrows():
         event = Event()
@@ -192,12 +208,13 @@ def writeICS(df):
         list_lines = str(row['Client']).split("\n")
         event.name = list_lines[0]
 
-
+        #Filtering the name field to get location info:
         if len(list_lines)>1:
-            if len(list_lines[3])>5:
-                event.location = list_lines[3]
-            else:
-                event.location = list_lines[2]
+            if len(list_lines)>3:
+             if len(list_lines[3])>5:
+                 event.location = list_lines[3]
+             else:
+                 event.location = list_lines[2]
         
         if row['Start'] == None or pd.isna(row['Start']):
             event.begin = datetime(row['Date'].year, row['Date'].month,row['Date'].day)
@@ -205,9 +222,16 @@ def writeICS(df):
             
         else:
             
-            event.begin = datetime(int(row['Date'].year),int(row['Date'].month), int(row['Date'].day), int(row['Start'].hour), int(row['Start'].minute))
-            
-            event.end = datetime(int(row['Date'].year), row['Date'].month, row['Date'].day, row['Finish'].hour, row['Finish'].minute)
+            if dst_in_effect:
+                actualHourBegin = int(row['Start'].hour)-1
+                actualHourEnd = int(row['Finish'].hour)-1
+            else:
+                actualHourBegin = int(row['Start'].hour)
+                actualHourEnd = int(row['Finish'].hour)
+
+
+            event.begin = datetime(int(row['Date'].year),int(row['Date'].month), int(row['Date'].day), actualHourBegin, int(row['Start'].minute))
+            event.end = datetime(int(row['Date'].year), row['Date'].month, row['Date'].day, actualHourEnd, row['Finish'].minute)
         
         
         event.description = f"Equipments: {row['Equips']}\nObservations: {row['Obs']}\nService: {row['Serv']}"
@@ -225,9 +249,9 @@ def main():
     infoStart, infoEnd = sheetDF(wb, dateDict)
     indexStart, indexEnd = searchDate(infoStart, infoEnd, dateDict)
     df = filterInfo(indexStart, indexEnd, infoStart, infoEnd)
-    #print(df)
-    cal = writeICS(df)
-    #print(cal.serialize())
+    
+    cal = writeICS(df,userName)
+    print(cal.serialize())
    
 
 if __name__ == "__main__":
