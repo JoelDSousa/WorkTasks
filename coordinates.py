@@ -12,13 +12,13 @@
 import subprocess
 import sys
 import os
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 import re
 import io
 from os import listdir
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox,ttk
 # Install required packages if not already installed
 required_packages = [
     'pandas',
@@ -242,7 +242,47 @@ def writeICS(df, userName):
         f.writelines(cal)
     return(cal)
 
+    
+# USER SELECTS FOLDER FOR ICS SCHEDULE
+def list_folders_in_common_path():
+    common_path = "C:\\MEOCloud"
+    user_folders = [folder for folder in os.listdir(common_path)]
+    return user_folders
+
+def get_user_choice(folders):
+    root = tk.Tk()
+    root.title("Escolha o utilizador")
+
+    # Dropdown menu
+    folder_var = tk.StringVar()
+    dropdown_menu = ttk.Combobox(root, textvariable=folder_var, values=folders)
+    dropdown_menu.pack(pady=10)
+
+    # Set the default value to the first user folder
+    if folders:
+        dropdown_menu.set(folders[0])
+
+    # Button to select the folder
+    select_button = tk.Button(root, text="Selecionar", command=lambda: root.quit())
+    select_button.pack()
+
+    # Event loop (so the dropdown menu stays visible until the button is pressed)
+    root.mainloop()
+
+    # Get the selected folder
+    selected_folder = folder_var.get()
+    return selected_folder
+
+
 def main():
+    user_folders = list_folders_in_common_path()
+    selected_folder = get_user_choice(user_folders)
+    if selected_folder:
+        
+        new_directory = "C:\\MEOCloud\\" + selected_folder + "\\Agenda"
+        os.chdir(new_directory)
+
+        
     dateDict = get_days()
     fileMatched, userName = matched_Excel(dateDict['year'])
     wb = open_Excel(fileMatched)
@@ -250,8 +290,8 @@ def main():
     indexStart, indexEnd = searchDate(infoStart, infoEnd, dateDict)
     df = filterInfo(indexStart, indexEnd, infoStart, infoEnd)
     
-    cal = writeICS(df,userName)
-    print(cal.serialize())
+    writeICS(df,userName)
+    
    
 
 if __name__ == "__main__":
