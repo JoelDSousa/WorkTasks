@@ -244,8 +244,8 @@ def writeICS(df, userName):
 
     
 # USER SELECTS FOLDER FOR ICS SCHEDULE
-def list_folders_in_common_path():
-    common_path = "C:\\MEOCloud"
+def list_folders_in_common_path(common_path):
+    
     user_folders = [folder for folder in os.listdir(common_path)]
     return user_folders
 
@@ -275,11 +275,12 @@ def get_user_choice(folders):
 
 
 def main():
-    user_folders = list_folders_in_common_path()
+    common_path = "ROOT" # Change this to actual root folder path
+    user_folders = list_folders_in_common_path(common_path)
     selected_folder = get_user_choice(user_folders)
     if selected_folder:
         
-        new_directory = "C:\\MEOCloud\\" + selected_folder + "\\Agenda"
+        new_directory = common_path + "\\" + selected_folder + "\\Agenda" 
         os.chdir(new_directory)
 
         
