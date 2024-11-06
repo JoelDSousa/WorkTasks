@@ -1,0 +1,3 @@
+Excel file got changed to not have a password encription
+The script needed to be updated to not include encription
+Aditionally, the script was changed to allow the end user to define how many days are of interest to define the schedule.
