@@ -36,11 +36,11 @@ def get_days(delta):
             month_start += 1
     elif month_start in small_months and day_end > 30 or month_start in big_months and day_end > 31:
         day_end -= 30 if month_start in small_months else 31
-        month_start += 1
+        month_end = month_start + 1
 
-    sheet_name = f"{year-2000}{month_start}" if month_start == month_start else [f"{year-2000}{month_start}", f"{year-2000}{month_start + 1}"]
+    sheet_name = f"{year-2000}{month_start}" if month_start == month_end else [f"{year-2000}{month_start}", f"{year-2000}{month_start + 1}"]
 
-    return {"year": year, "start_month": month_start, "end_month": month_start, "start_day": day_start, "end_day": day_end, "sheets": sheet_name}
+    return {"year": year, "start_month": month_start, "end_month": month_end, "start_day": day_start, "end_day": day_end, "sheets": sheet_name}
 
 def list_files(cwd):
     return [f for f in os.listdir(cwd) if os.path.isfile(os.path.join(cwd, f))]
@@ -59,7 +59,9 @@ def filter_columns(df):
     return df
 
 def read_excel(file_path, sheets_to_read):
+    print('STOP')
     if isinstance(sheets_to_read, str):
+        
         return filter_columns(pd.read_excel(file_path, sheet_name=sheets_to_read))
     dataframes = {sheet: pd.read_excel(file_path, sheet_name=sheet) for sheet in sheets_to_read}
     df_full = pd.concat(dataframes.values(), ignore_index=True)
@@ -118,7 +120,7 @@ def write_ics(df, user_name):
     with open(file_path, 'w', encoding="utf-8") as f:
         f.writelines(cal)
 
-    print('finished wirting ics')
+    print('finished writing ics')
     
 
 def list_folders_in_common_path(year):
