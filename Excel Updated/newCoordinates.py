@@ -28,7 +28,7 @@ def get_days(delta):
     day_end = day_start + delta
     big_months = {1, 3, 5, 7, 8, 10, 12}
     small_months = {4, 6, 9, 11}
-
+    month_end = month_start
     # Ajusta a data para transição de mês
     if month_start == 2:
         if (year % 4 == 0 and day_end > 29) or (year % 4 != 0 and day_end > 28):
@@ -91,7 +91,9 @@ def write_ics(df, user_name):
         event = Event()
         client_info = row['Client'].split('\n')
         index = 3
-        if len(client_info)<4:
+        if len(client_info)==1:
+            index = 0
+        elif len(client_info)<4:
             index = 1
         elif len(client_info[3])<7:
             index=2
@@ -101,8 +103,10 @@ def write_ics(df, user_name):
         event.location = client_info[index]  if index<3   else client_info[3][4:]
 
         print('STOP')
-
-        event.description = f"{row['Serv']}\n{row['Equips']}\n{row['Obs']}\n{client_info[2]}"
+        if len(client_info)==1:
+            event.description = f"{row['Serv']}\n{row['Equips']}\n{row['Obs']}\n"
+        else:
+            event.description = f"{row['Serv']}\n{row['Equips']}\n{row['Obs']}\n{client_info[2]}"
 
 
 
